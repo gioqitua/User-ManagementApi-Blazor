@@ -1,0 +1,96 @@
+﻿@page "/profiles"
+@using User_Management_BLL.DTOs;
+@using User_Management_BLL.Services;
+@inject ICrudService<UserProfileDto> userService
+@inject MudBlazor.ISnackbar snackBar
+
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add / Edit Profiles</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTextField @bind-Value="_profile.Id" Label="Id" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_profile.FirstName" Label="FirstName" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_profile.LastName" Label="LastName" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_profile.PersonalNumber" Label="PersonalNumber" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_profile.UserId" Label="UserId" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <br />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save">Save Profile</MudButton>
+    </MudCardContent>
+</MudCard>
+<br />
+<MudTable Elevation="25" Items="GetProfiles()" Filter="new Func<UserProfileDto, bool>(Search)" @bind-_profile="_profile">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Profiles</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Users..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>FirstName</MudTh>
+        <MudTh>LastName</MudTh>
+        <MudTh>PersonalNumber</MudTh>
+        <MudTh>UserId</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="FirstName">@context.FirstName</MudTd>
+        <MudTd DataLabel="LastName">@context.LastName</MudTd>
+        <MudTd DataLabel="PersonalNumber">@context.PersonalNumber</MudTd>
+        <MudTd DataLabel="UserId">@context.UserId</MudTd>
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.Id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.Id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+@code {
+    private string searchString = "";
+    private UserProfileDto _profile = new();
+    private List<UserProfileDto> _profiles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetProfiles();
+    }
+
+    private List<UserProfileDto> GetProfiles()
+    {
+        _profiles = userService.GetAll().ToList();
+        return _profiles;
+    }
+
+    private bool Search(UserProfileDto user)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+
+        if (user.Id.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || user.FirstName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void Save()
+    {
+        userService.Save(_profile);
+        _profile = new UserProfileDto();
+        snackBar.Add("Profile Saved.", Severity.Success);
+        GetProfiles();
+    }
+
+    private void Edit(int id)
+    {
+        _profile = userService.GetById(id);
+    }
+
+    private void Delete(int id)
+    {
+        userService.Delete(id);
+        snackBar.Add("Profile Deleted.", Severity.Success);
+        GetProfiles();
+    }
+}

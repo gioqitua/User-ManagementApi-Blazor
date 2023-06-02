@@ -1,0 +1,100 @@
+﻿@page "/users"
+@using User_Management_BLL.DTOs;
+@using User_Management_BLL.Services;
+@inject ICrudService<UserDto> userService
+@inject MudBlazor.ISnackbar snackBar
+
+<MudCard Elevation="25">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Add / Edit Users</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTextField @bind-Value="_user.Id" Label="Id" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_user.UserName" Label="Name" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_user.Email" Label="Email" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_user.IsActive" Label="IsActive" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_user.PasswordHash" Label="PasswordHash" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <MudTextField @bind-Value="_user.UserProfileId" Label="UserProfileId" Variant="Variant.Text" Margin="Margin.Normal"></MudTextField>
+        <br />
+        <MudButton Variant="Variant.Filled" Color="Color.Success" OnClick="Save">Save User</MudButton>
+    </MudCardContent>
+</MudCard>
+<br />
+<MudTable Elevation="25" Items="GetUsers()" Filter="new Func<UserDto, bool>(Search)" @bind-_user="_user">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Customers</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search for Users..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Email</MudTh>
+        <MudTh>IsActive</MudTh>
+        <MudTh>PasswordHash</MudTh>
+        <MudTh>UserProfileId</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.Id</MudTd>
+        <MudTd DataLabel="Name">@context.UserName</MudTd>
+        <MudTd DataLabel="Email">@context.Email</MudTd>
+        <MudTd DataLabel="IsActive">@context.IsActive</MudTd>
+        <MudTd DataLabel="PasswordHash">@context.PasswordHash</MudTd>
+        <MudTd DataLabel="UserProfileId">@context.UserProfileId</MudTd>
+
+        <MudTd DataLabel="">
+            <MudFab @onclick="@(()=>Edit(@context.Id))" Color="Color.Primary" Icon="@Icons.Material.Filled.Edit" Size="Size.Small" IconSize="Size.Small" />
+            <MudFab @onclick="@(()=>Delete(@context.Id))" Color="Color.Secondary" Icon="@Icons.Material.Filled.Delete" Size="Size.Small" IconSize="Size.Small" />
+        </MudTd>
+    </RowTemplate>
+</MudTable>
+@code {
+    private string searchString = "";
+    private UserDto _user = new();
+    private List<UserDto> _users = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        GetUsers();
+    }
+
+    private List<UserDto> GetUsers()
+    {
+        _users = userService.GetAll().ToList();
+        return _users;
+    }
+
+    private bool Search(UserDto user)
+    {
+        if (string.IsNullOrWhiteSpace(searchString)) return true;
+
+        if (user.Id.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase)
+            || user.UserName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private void Save()
+    {
+        userService.Save(_user);
+        _user = new UserDto();
+        snackBar.Add("User Saved.", Severity.Success);
+        GetUsers();
+    }
+
+    private void Edit(int id)
+    {
+        _user = userService.GetById(id);
+    }
+
+    private void Delete(int id)
+    {
+        userService.Delete(id);
+        snackBar.Add("User Deleted.", Severity.Success);
+        GetUsers();
+    }
+}
